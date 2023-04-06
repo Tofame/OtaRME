@@ -80,9 +80,6 @@ struct DrawingOptions {
 	bool show_preview;
 	bool show_hooks;
 	bool hide_items_when_zoomed;
-	bool show_towns;
-	bool always_show_zones;
-	bool extended_house_shader;
 
 	bool experimental_fog;
 };
@@ -148,12 +145,10 @@ protected:
 	void BlitSpriteType(int screenx, int screeny, GameSprite* spr, int red = 255, int green = 255, int blue = 255, int alpha = 255);
 	void BlitCreature(int screenx, int screeny, const Creature* c, int red = 255, int green = 255, int blue = 255, int alpha = 255);
 	void BlitCreature(int screenx, int screeny, const Outfit& outfit, Direction dir, int red = 255, int green = 255, int blue = 255, int alpha = 255);
-	void BlitSquare(int sx, int sy, int red, int green, int blue, int alpha, int size = 0);
-	void DrawRawBrush(int screenx, int screeny, ItemType* itemType, uint8_t r, uint8_t g, uint8_t b, uint8_t alpha);
 	void DrawTile(TileLocation* tile);
 	void DrawBrushIndicator(int x, int y, Brush* brush, uint8_t r, uint8_t g, uint8_t b);
 	void DrawHookIndicator(int x, int y, const ItemType& type);
-	void WriteTooltip(Item* item, std::ostringstream& stream, bool isHouseTile = false);
+	void WriteTooltip(Item* item, std::ostringstream& stream);
 	void WriteTooltip(Waypoint* item, std::ostringstream& stream);
 	void MakeTooltip(int screenx, int screeny, const std::string& text, uint8_t r = 255, uint8_t g = 255, uint8_t b = 255);
 	void AddLight(TileLocation* location);

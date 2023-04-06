@@ -176,10 +176,6 @@ namespace Config {
 
 		EXPERIMENTAL_FOG,
 
-		SHOW_TOWNS,
-		ALWAYS_SHOW_ZONES,
-		EXT_HOUSE_SHADER,
-
 		LAST,
 	};
 }

@@ -34,7 +34,6 @@ public:
 	virtual ~OldPropertiesWindow();
 
 	void OnFocusChange(wxFocusEvent&);
-	void OnChar(wxKeyEvent& evt);
 
 	void OnClickOK(wxCommandEvent&);
 	void OnClickCancel(wxCommandEvent&);

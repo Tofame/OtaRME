@@ -19,7 +19,6 @@
 #define RME_COMMONS_H_
 
 #include "main.h"
-#include "position.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <cmath>
@@ -72,7 +71,7 @@ std::wstring string2wstring(const std::string& utf8string);
 std::string wstring2string(const std::wstring& widestring);
 
 // Gets position values from ClipBoard
-bool posFromClipboard(Position& position, const int mapWidth = MAP_MAX_WIDTH, const int mapHeight = MAP_MAX_HEIGHT);
+bool posFromClipboard(int& x, int& y, int& z);
 
 // Returns 'yes' if the defined value is true or 'no' if it is false.
 wxString b2yn(bool v);

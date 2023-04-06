@@ -38,7 +38,6 @@ protected:
 	Position position;
 	size_t spawn_count;
 	size_t waypoint_count;
-	size_t town_count;
 	HouseExitList* house_exits; // Any house exits pointing here
 
 public:
@@ -63,9 +62,6 @@ public:
 	size_t getWaypointCount() const {return waypoint_count;}
 	void increaseWaypointCount() {waypoint_count++;}
 	void decreaseWaypointCount() {waypoint_count--;}
-	size_t getTownCount() const { return town_count; }
-	void increaseTownCount() { town_count++; }
-	void decreaseTownCount() { town_count--; }
 	HouseExitList* createHouseExits() {if(house_exits) return house_exits; return house_exits = newd HouseExitList;}
 	HouseExitList* getHouseExits() {return house_exits;}
 

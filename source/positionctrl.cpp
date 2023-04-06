@@ -35,9 +35,6 @@ wxStaticBoxSizer(wxHORIZONTAL, parent, label)
 	z_field = newd NumberTextCtrl(parent, wxID_ANY, z, 0, maxz, wxTE_PROCESS_ENTER, "Z", wxDefaultPosition, wxSize(35, 20));
 	z_field->Bind(wxEVT_TEXT_PASTE, &PositionCtrl::OnClipboardText, this);
 	Add(z_field, 1, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 5);
-
-	maxWidth = maxx;
-	maxHeight = maxy;
 }
 
 PositionCtrl::~PositionCtrl()
@@ -69,7 +66,7 @@ bool PositionCtrl::Enable(bool enable)
 void PositionCtrl::OnClipboardText(wxClipboardTextEvent& evt)
 {
 	Position position;
-	if (posFromClipboard(position, maxWidth, maxHeight)) {
+	if(posFromClipboard(position.x, position.y, position.z)) {
 		x_field->SetIntValue(position.x);
 		y_field->SetIntValue(position.y);
 		z_field->SetIntValue(position.z);

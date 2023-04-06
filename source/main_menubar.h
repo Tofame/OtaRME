@@ -119,9 +119,6 @@ namespace MenuBar
 		SHOW_TOOLTIPS,
 		SHOW_PREVIEW,
 		SHOW_WALL_HOOKS,
-		SHOW_TOWNS,
-		ALWAYS_SHOW_ZONES,
-		EXT_HOUSE_SHADER,
 		WIN_MINIMAP,
 		NEW_PALETTE,
 		TAKE_SCREENSHOT,
@@ -163,7 +160,7 @@ namespace MenuBar
 
 class MainFrame;
 
-class MainMenuBar : wxEvtHandler
+class MainMenuBar : public wxEvtHandler
 {
 public:
 	MainMenuBar(MainFrame* frame);

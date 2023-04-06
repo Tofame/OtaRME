@@ -318,7 +318,7 @@ OldPropertiesWindow::OldPropertiesWindow(wxWindow* win_parent, const Map* map, c
 		if(door) {
 			subsizer->Add(newd wxStaticText(this, wxID_ANY, "Door ID"));
 			door_id_field = newd wxSpinCtrl(this, wxID_ANY, i2ws(door->getDoorID()), wxDefaultPosition, wxSize(-1, 20), wxSP_ARROW_KEYS, 0, 0xFF, door->getDoorID());
-			if(!edit_tile || !edit_tile->isHouseTile() || !door->isRealDoor()) {
+			if(!edit_tile || !edit_tile->isHouseTile()) {
 				door_id_field->Disable();
 			}
 			subsizer->Add(door_id_field, wxSizerFlags(1).Expand());
@@ -329,13 +329,10 @@ OldPropertiesWindow::OldPropertiesWindow(wxWindow* win_parent, const Map* map, c
 
 			wxSizer* possizer = newd wxBoxSizer(wxHORIZONTAL);
 			x_field = newd wxSpinCtrl(this, wxID_ANY, i2ws(teleport->getX()), wxDefaultPosition, wxSize(-1, 20), wxSP_ARROW_KEYS, 0, map->getWidth(), teleport->getX());
-			x_field->Bind(wxEVT_CHAR, &OldPropertiesWindow::OnChar, this);
 			possizer->Add(x_field, wxSizerFlags(3).Expand());
 			y_field = newd wxSpinCtrl(this, wxID_ANY, i2ws(teleport->getY()), wxDefaultPosition, wxSize(-1, 20), wxSP_ARROW_KEYS, 0, map->getHeight(), teleport->getY());
-			y_field->Bind(wxEVT_CHAR, &OldPropertiesWindow::OnChar, this);
 			possizer->Add(y_field, wxSizerFlags(3).Expand());
 			z_field = newd wxSpinCtrl(this, wxID_ANY, i2ws(teleport->getZ()), wxDefaultPosition, wxSize(-1, 20), wxSP_ARROW_KEYS, 0, MAP_MAX_LAYER, teleport->getZ());
-			z_field->Bind(wxEVT_CHAR, &OldPropertiesWindow::OnChar, this);
 			possizer->Add(z_field, wxSizerFlags(2).Expand());
 
 			subsizer->Add(possizer, wxSizerFlags(1).Expand());
@@ -499,7 +496,7 @@ OldPropertiesWindow::OldPropertiesWindow(wxWindow* win_parent, const Map* map, c
 	subsizer->Add(newd wxStaticText(this, wxID_ANY, "\"" + wxstr(edit_creature->getName()) + "\""), wxSizerFlags(1).Expand());
 
 	subsizer->Add(newd wxStaticText(this, wxID_ANY, "Spawn interval"));
-	count_field = newd wxSpinCtrl(this, wxID_ANY, i2ws(edit_creature->getSpawnTime()), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 10, 86400, edit_creature->getSpawnTime());
+	count_field = newd wxSpinCtrl(this, wxID_ANY, i2ws(edit_creature->getSpawnTime()), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 10, 3600, edit_creature->getSpawnTime());
 	// count_field->SetSelection(-1, -1);
 	subsizer->Add(count_field, wxSizerFlags(1).Expand());
 
@@ -594,24 +591,6 @@ void OldPropertiesWindow::OnFocusChange(wxFocusEvent& event)
 		spin->SetSelection(-1, -1);
 	else if(wxTextCtrl* text = dynamic_cast<wxTextCtrl*>(win))
 		text->SetSelection(-1, -1);
-}
-
-void OldPropertiesWindow::OnChar(wxKeyEvent& evt)
-{
-	if (evt.GetKeyCode() == WXK_CONTROL_V) {
-		Position position;
-		const Editor* const editor = g_gui.GetCurrentEditor();
-		if (posFromClipboard(position, editor->getMapWidth(), editor->getMapHeight())) {
-			x_field->SetValue(position.x);
-			y_field->SetValue(position.y);
-			z_field->SetValue(position.z);
-			return;
-
-		}
-
-	}
-
-	evt.Skip();
 }
 
 void OldPropertiesWindow::OnClickOK(wxCommandEvent& WXUNUSED(event))

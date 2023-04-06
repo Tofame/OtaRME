@@ -19,13 +19,12 @@
 #define RME_DEFINITIONS_H_
 
 #define __W_RME_APPLICATION_NAME__ wxString("OTAcademy Map Editor")
-#define __RME_APPLICATION_NAME__ std::string("OTAcademy Map Editor")
 
 // Version info
 // xxyyzzt (major, minor, subversion)
 #define __RME_VERSION_MAJOR__      4
-#define __RME_VERSION_MINOR__      1
-#define __RME_SUBVERSION__         1
+#define __RME_VERSION_MINOR__      0
+#define __RME_SUBVERSION__         0
 
 #define __LIVE_NET_VERSION__       5
 
@@ -38,8 +37,6 @@
 	__RME_VERSION_MAJOR__, \
     __RME_VERSION_MINOR__, \
     __RME_SUBVERSION__)
-
-#define __SITE_URL__ "https://github.com/OTAcademy/RME"
 
 //#define __PRERELEASE__ 1
 

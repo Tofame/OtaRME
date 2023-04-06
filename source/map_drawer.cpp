@@ -44,6 +44,13 @@
 #include "waypoint_brush.h"
 #include "light_drawer.h"
 
+#include <fstream> // Import function to read text files
+
+using namespace std;
+
+ifstream inputFile{ "TransparantTiles.txt" };  // Read .txt
+vector<uint32_t> transparant_tiles{ std::istream_iterator<uint32_t>{inputFile}, {} }; // Initialize vector of item IDs to turn transparant
+
 DrawingOptions::DrawingOptions()
 {
 	SetDefault();
@@ -132,38 +139,38 @@ MapDrawer::~MapDrawer()
 
 void MapDrawer::SetupVars()
 {
-	canvas->MouseToMap(&mouse_map_x, &mouse_map_y);
-	canvas->GetViewBox(&view_scroll_x, &view_scroll_y, &screensize_x, &screensize_y);
+    canvas->MouseToMap(&mouse_map_x, &mouse_map_y);
+    canvas->GetViewBox(&view_scroll_x, &view_scroll_y, &screensize_x, &screensize_y);
 
-	dragging = canvas->dragging;
-	dragging_draw = canvas->dragging_draw;
+    dragging = canvas->dragging;
+    dragging_draw = canvas->dragging_draw;
 
-	zoom = (float)canvas->GetZoom();
-	tile_size = int(TileSize / zoom); // after zoom
-	floor = canvas->GetFloor();
+    zoom = (float)canvas->GetZoom();
+    tile_size = int(TileSize / zoom); // after zoom
+    floor = canvas->GetFloor();
 
-	if(options.show_all_floors) {
-		if(floor <= GROUND_LAYER)
-			start_z = GROUND_LAYER;
-		else
-			start_z = std::min(MAP_MAX_LAYER, floor + 2);
-	}
-	else
-		start_z = floor;
+    if(options.show_all_floors) {
+        if(floor < 8)
+            start_z = MAP_MAX_LAYER; // These two values for start_z allow the editor to get lower floors.
+        else
+            start_z = MAP_MAX_LAYER;  //start_z = std::min(MAP_MAX_LAYER, floor + 2);
+    }
+    else
+        start_z = floor;
 
-	end_z = floor;
-	superend_z = (floor > GROUND_LAYER ? 8 : 0);
+    end_z = floor;
+    superend_z = (floor > GROUND_LAYER ? 8 : 0);
 
-	start_x = view_scroll_x / TileSize;
-	start_y = view_scroll_y / TileSize;
+    start_x = view_scroll_x / TileSize;
+    start_y = view_scroll_y / TileSize;
 
-	if(floor > GROUND_LAYER) {
-		start_x -= 2;
-		start_y -= 2;
-	}
+    if(floor > GROUND_LAYER) {
+        start_x -= 2;
+        start_y -= 2;
+    }
 
-	end_x = start_x + screensize_x / tile_size + 2;
-	end_y = start_y + screensize_y / tile_size + 2;
+    end_x = start_x + screensize_x / tile_size + 2;
+    end_y = start_y + screensize_y / tile_size + 2;
 }
 
 void MapDrawer::SetupGL()
@@ -813,7 +820,7 @@ void MapDrawer::DrawBrush()
 							if(brush->isOptionalBorder())
 								glColorCheck(brush, Position(x, y, floor));
 							else
-								DrawRawBrush(cx, cy, raw_brush->getItemType(), 160, 160, 160, 160);
+								BlitSpriteType(cx, cy, raw_brush->getItemType()->sprite, 160, 160, 160, 160);
 						}
 					}
 				} else {
@@ -879,7 +886,7 @@ void MapDrawer::DrawBrush()
 						float distance = sqrt(dx*dx + dy*dy);
 						if(distance < radii) {
 							if(brush->isRaw()) {
-								DrawRawBrush(cx, cy, raw_brush->getItemType(), 160, 160, 160, 160);
+								BlitSpriteType(cx, cy, raw_brush->getItemType()->sprite, 160, 160, 160, 160);
 							} else {
 								glColor(brushColor);
 								glBegin(GL_QUADS);
@@ -977,7 +984,7 @@ void MapDrawer::DrawBrush()
 					if(g_gui.GetBrushShape() == BRUSHSHAPE_SQUARE) {
 						if(x >= -g_gui.GetBrushSize() && x <= g_gui.GetBrushSize() && y >= -g_gui.GetBrushSize() && y <= g_gui.GetBrushSize()) {
 							if(brush->isRaw()) {
-								DrawRawBrush(cx, cy, raw_brush->getItemType(), 160, 160, 160, 160);
+								BlitSpriteType(cx, cy, raw_brush->getItemType()->sprite, 160, 160, 160, 160);
 							} else {
 								if(brush->isWaypoint()) {
 									uint8_t r, g, b;
@@ -1002,7 +1009,7 @@ void MapDrawer::DrawBrush()
 						double distance = sqrt(double(x*x) + double(y*y));
 						if(distance < g_gui.GetBrushSize()+0.005) {
 							if(brush->isRaw()) {
-								DrawRawBrush(cx, cy, raw_brush->getItemType(), 160, 160, 160, 160);
+								BlitSpriteType(cx, cy, raw_brush->getItemType()->sprite, 160, 160, 160, 160);
 							} else {
 								if(brush->isWaypoint()) {
 									uint8_t r, g, b;
@@ -1062,24 +1069,34 @@ void MapDrawer::BlitItem(int& draw_x, int& draw_y, const Position& pos, Item* it
 	if (!options.ingame && options.show_tech_items) {
 		// Red invalid client id
 		if (it.id == 0) {
-			BlitSquare(draw_x, draw_y, red, 0, 0, alpha);
+			glDisable(GL_TEXTURE_2D);
+			glBlitSquare(draw_x, draw_y, red, 0, 0, alpha);
+			glEnable(GL_TEXTURE_2D);
 			return;
-		}
+		} else if (find(transparant_tiles.begin(), transparant_tiles.end(), item->getClientID()) != transparant_tiles.end()) {
+        	alpha /= 2; // Checks the id of the drawn item against the vector of transparant items and reduces the alpha to make it transparant
+    	}
 
 		switch (it.clientID) {
 			// Yellow invisible stairs tile
 			case 469:
-				BlitSquare(draw_x, draw_y, red, green, 0, alpha / 3 * 2);
+				glDisable(GL_TEXTURE_2D);
+				glBlitSquare(draw_x, draw_y, red, green, 0, alpha / 3 * 2);
+				glEnable(GL_TEXTURE_2D);
 				return;
 
 				// Red invisible walkable tile
 			case 470:
-				BlitSquare(draw_x, draw_y, red, 0, 0, alpha / 3 * 2);
+				glDisable(GL_TEXTURE_2D);
+				glBlitSquare(draw_x, draw_y, red, 0, 0, alpha / 3 * 2);
+				glEnable(GL_TEXTURE_2D);
 				return;
 
 				// Cyan invisible wall
 			case 2187:
-				BlitSquare(draw_x, draw_y, 0, green, blue, 80);
+				glDisable(GL_TEXTURE_2D);
+				glBlitSquare(draw_x, draw_y, 0, green, blue, 80);
+				glEnable(GL_TEXTURE_2D);
 				return;
 			default:
 				break;
@@ -1203,7 +1220,9 @@ void MapDrawer::BlitItem(int& draw_x, int& draw_y, const Position& pos, Item* it
 
 	// draw wall hook
 	if (!options.ingame && options.show_hooks && (it.hookSouth || it.hookEast)) {
+		glDisable(GL_TEXTURE_2D);
 		DrawHookIndicator(draw_x, draw_y, it);
+		glEnable(GL_TEXTURE_2D);
 	}
 
 	// draw light color indicator
@@ -1328,74 +1347,7 @@ void MapDrawer::BlitCreature(int screenx, int screeny, const Creature* c, int re
 	BlitCreature(screenx, screeny, c->getLookType(), c->getDirection(), red, green, blue, alpha);
 }
 
-void MapDrawer::BlitSquare(int sx, int sy, int red, int green, int blue, int alpha, int size)
-{
-	if (size == 0)
-		size = TileSize;
-
-	GameSprite* spr = g_items[SPRITE_ZONE].sprite;
-	if (!spr) {
-		return;
-	}
-
-	int texnum = spr->getHardwareID(0, 0, 0, -1, 0, 0, 0, 0);
-	if (texnum == 0) {
-		return;
-	}
-
-	glBindTexture(GL_TEXTURE_2D, texnum);
-	glColor4ub(uint8_t(red), uint8_t(green), uint8_t(blue), uint8_t(alpha));
-	glBegin(GL_QUADS);
-	glTexCoord2f(0.f, 0.f); glVertex2f(sx, sy);
-	glTexCoord2f(1.f, 0.f); glVertex2f(sx + TileSize, sy);
-	glTexCoord2f(1.f, 1.f); glVertex2f(sx + TileSize, sy + TileSize);
-	glTexCoord2f(0.f, 1.f); glVertex2f(sx, sy + TileSize);
-	glEnd();
-}
-
-void MapDrawer::DrawRawBrush(int screenx, int screeny, ItemType* itemType, uint8_t r, uint8_t g, uint8_t b, uint8_t alpha)
-{
-	GameSprite* spr = itemType->sprite;
-	uint16_t cid = itemType->clientID;
-
-	switch (cid) {
-		// Yellow invisible stairs tile
-		case 469:
-			b = 0;
-			alpha = alpha / 3 * 2;
-			spr = g_items[SPRITE_ZONE].sprite;
-			break;
-
-		// Red invisible walkable tile
-		case 470:
-			g = 0;
-			b = 0;
-			alpha = alpha / 3 * 2;
-			spr = g_items[SPRITE_ZONE].sprite;
-			break;
-
-		// Cyan invisible wall
-		case 2187:
-			r = 0;
-			alpha = alpha / 3;
-			spr = g_items[SPRITE_ZONE].sprite;
-			break;
-
-		default:
-			break;
-	}
-
-	// primal light
-	if (cid >= 39092 && cid <= 39100 || cid == 39236 || cid == 39367 || cid == 39368) {
-		spr = g_items[SPRITE_LIGHTSOURCE].sprite;
-		r = 0;
-		alpha = alpha / 3 * 2;
-	}
-
-	BlitSpriteType(screenx, screeny, spr, r, g, b, alpha);
-}
-
-void MapDrawer::WriteTooltip(Item* item, std::ostringstream& stream, bool isHouseTile)
+void MapDrawer::WriteTooltip(Item* item, std::ostringstream& stream)
 {
 	if(item == nullptr)
 		return;
@@ -1407,18 +1359,7 @@ void MapDrawer::WriteTooltip(Item* item, std::ostringstream& stream, bool isHous
 	const uint16_t unique = item->getUniqueID();
 	const uint16_t action = item->getActionID();
 	const std::string& text = item->getText();
-	uint8_t doorId = 0;
-
-	if (isHouseTile && item->isDoor()) {
-		if (Door* door = dynamic_cast<Door*>(item)) {
-			if (door->isRealDoor()) {
-				doorId = door->getDoorID();
-			}
-		}
-	}
-
-	Teleport* tp = dynamic_cast<Teleport*>(item);
-	if(unique == 0 && action == 0 && doorId == 0 && text.empty() && !tp)
+	if(unique == 0 && action == 0 && text.empty())
 		return;
 
 	if(stream.tellp() > 0)
@@ -1430,14 +1371,8 @@ void MapDrawer::WriteTooltip(Item* item, std::ostringstream& stream, bool isHous
 		stream << "aid: " << action << "\n";
 	if(unique > 0)
 		stream << "uid: " << unique << "\n";
-	if (doorId > 0)
-		stream << "door id: " << static_cast<int>(doorId) << "\n";
 	if(!text.empty())
 		stream << "text: " << text << "\n";
-	if (tp) {
-		Position& dest = tp->getDestination();
-		stream << "destination: " <<  dest.x << ", " << dest.y << ", " << dest.z << "\n";
-	}
 }
 
 void MapDrawer::WriteTooltip(Waypoint* waypoint, std::ostringstream& stream)
@@ -1474,166 +1409,143 @@ void MapDrawer::DrawTile(TileLocation* location)
 
 	int offset;
 	if (map_z <= GROUND_LAYER)
-		offset = (GROUND_LAYER - map_z) * TileSize;
+    	offset = (GROUND_LAYER - map_z) * TileSize;
 	else
-		offset = TileSize * (floor - map_z);
+    	if (floor <= GROUND_LAYER)
+        	offset = (GROUND_LAYER - map_z) * TileSize;
+    	else
+        	offset = TileSize * (floor - map_z);
 
 	int draw_x = ((map_x * TileSize) - view_scroll_x) - offset;
 	int draw_y = ((map_y * TileSize) - view_scroll_y) - offset;
 
 	uint8_t r = 255,g = 255,b = 255;
+	if(tile->ground || only_colors) {
 
-// begin filters for ground tile
-	if(!as_minimap) {
-		bool showspecial = options.show_only_colors || options.show_special_tiles;
+		if(!as_minimap) {
+			bool showspecial = options.show_only_colors || options.show_special_tiles;
 
-		if(options.show_blocking && tile->isBlocking() && tile->size() > 0) {
-			g = g / 3 * 2;
-			b = b / 3 * 2;
-		}
-
-		int item_count = tile->items.size();
-		if(options.highlight_items && item_count > 0 && !tile->items.back()->isBorder()) {
-			static const float factor[5] = { 0.75f, 0.6f, 0.48f, 0.40f, 0.33f };
-			int idx = (item_count < 5 ? item_count : 5) - 1;
-			g = int(g * factor[idx]);
-			r = int(r * factor[idx]);
-		}
-
-		if(options.show_spawns && location->getSpawnCount() > 0) {
-			float f = 1.0f;
-			for(uint32_t i = 0; i < location->getSpawnCount(); ++i) {
-				f *= 0.7f;
+			if(options.show_blocking && tile->isBlocking() && tile->size() > 0) {
+				g = g / 3 * 2;
+				b = b / 3 * 2;
 			}
-			g = uint8_t(g * f);
-			b = uint8_t(b * f);
-		}
 
-		if(options.show_houses && tile->isHouseTile()) {
-			if((int)tile->getHouseID() == current_house_id) {
+			int item_count = tile->items.size();
+			if(options.highlight_items && item_count > 0 && !tile->items.back()->isBorder()) {
+				static const float factor[5] = { 0.75f, 0.6f, 0.48f, 0.40f, 0.33f };
+				int idx = (item_count < 5 ? item_count : 5) - 1;
+				g = int(g * factor[idx]);
+				r = int(r * factor[idx]);
+			}
+
+			if(options.show_spawns && location->getSpawnCount() > 0) {
+				float f = 1.0f;
+				for(uint32_t i = 0; i < location->getSpawnCount(); ++i) {
+					f *= 0.7f;
+				}
+				g = uint8_t(g * f);
+				b = uint8_t(b * f);
+			}
+
+			if(options.show_houses && tile->isHouseTile()) {
+				if((int)tile->getHouseID() == current_house_id) {
+					r /= 2;
+				}
+				else {
+					r /= 2;
+					g /= 2;
+				}
+			}
+			else if(showspecial && tile->isPZ()) {
 				r /= 2;
-			} else {
-				r /= 2;
+				b /= 2;
+			}
+
+			if(showspecial && tile->getMapFlags() & TILESTATE_PVPZONE) {
+				g = r / 4;
+				b = b / 3 * 2;
+			}
+
+			if(showspecial && tile->getMapFlags() & TILESTATE_NOLOGOUT) {
+				b /= 2;
+			}
+
+			if(showspecial && tile->getMapFlags() & TILESTATE_NOPVP) {
 				g /= 2;
 			}
-		} else if(showspecial && tile->isPZ()) {
-			r /= 2;
-			b /= 2;
 		}
 
-		if(showspecial && tile->getMapFlags() & TILESTATE_PVPZONE) {
-			g = r / 4;
-			b = b / 3 * 2;
-		}
-
-		if(showspecial && tile->getMapFlags() & TILESTATE_NOLOGOUT) {
-			b /= 2;
-		}
-
-		if(showspecial && tile->getMapFlags() & TILESTATE_NOPVP) {
-			g /= 2;
-		}
-	}
-
-	if(only_colors) {
-		if(as_minimap) {
-			uint8_t color = tile->getMiniMapColor();
-			r = (uint8_t)(int(color / 36) % 6 * 51);
-			g = (uint8_t)(int(color / 6) % 6 * 51);
-			b = (uint8_t)(color % 6 * 51);
-			BlitSquare(draw_x, draw_y, r, g, b, 255);
-		} else if(r != 255 || g != 255 || b != 255) {
-			BlitSquare(draw_x, draw_y, r, g, b, 128);
-		}
-	} else {
-		if (tile->ground) {
-			if (options.show_preview && zoom <= 2.0)
+		if(only_colors) {
+			if(as_minimap) {
+				uint8_t color = tile->getMiniMapColor();
+				r = (uint8_t)(int(color / 36) % 6 * 51);
+				g = (uint8_t)(int(color / 6) % 6 * 51);
+				b = (uint8_t)(color % 6 * 51);
+				glBlitSquare(draw_x, draw_y, r, g, b, 255);
+			}
+			else if(r != 255 || g != 255 || b != 255) {
+				glBlitSquare(draw_x, draw_y, r, g, b, 128);
+			}
+		} else {
+			if(options.show_preview && zoom <= 2.0)
 				tile->ground->animate();
 
 			BlitItem(draw_x, draw_y, tile, tile->ground, false, r, g, b);
-		} else if (options.always_show_zones && (r != 255 || g != 255 || b != 255)) {
-			DrawRawBrush(draw_x, draw_y, &g_items[SPRITE_ZONE], r, g, b, 60);
 		}
-	}
 
-	if(options.show_tooltips && map_z == floor && tile->ground)
-		WriteTooltip(tile->ground, tooltip);
-// end filters for ground tile
+		if(options.show_tooltips && map_z == floor)
+			WriteTooltip(tile->ground, tooltip);
+	}
 
 	if(!only_colors) {
 		if(zoom < 10.0 || !options.hide_items_when_zoomed) {
-			// items on tile
 			for(ItemVector::iterator it = tile->items.begin(); it != tile->items.end(); it++) {
-				// item tooltip
 				if(options.show_tooltips && map_z == floor)
-					WriteTooltip(*it, tooltip, tile->isHouseTile());
+					WriteTooltip(*it, tooltip);
 
-				// item animation
 				if(options.show_preview && zoom <= 2.0)
 					(*it)->animate();
 
-				// item sprite
 				if((*it)->isBorder()) {
 					BlitItem(draw_x, draw_y, tile, *it, false, r, g, b);
 				} else {
-					r = 255, g = 255, b = 255;
-
-					if (options.extended_house_shader && options.show_houses && tile->isHouseTile()) {
-						if ((int)tile->getHouseID() == current_house_id) {
-							r /= 2;
-						} else {
-							r /= 2;
-							g /= 2;
-						}
-					}
-					BlitItem(draw_x, draw_y, tile, *it, false, r, g, b);
+					BlitItem(draw_x, draw_y, tile, *it);
 				}
 			}
-			// monster/npc on tile
 			if(tile->creature && options.show_creatures) {
 				BlitCreature(draw_x, draw_y, tile->creature);
 			}
 		}
+		if(!options.ingame && waypoint && options.show_waypoints) {
+			BlitSpriteType(draw_x, draw_y, SPRITE_FLAME_BLUE, 64, 64, 255);
+		}
 
-		if (zoom < 10.0) {
-			// waypoint (blue flame)
-			if(!options.ingame && waypoint && options.show_waypoints) {
-				BlitSpriteType(draw_x, draw_y, SPRITE_WAYPOINT, 64, 64, 255);
+		if(tile->isHouseExit() && options.show_houses) {
+			if(tile->hasHouseExit(current_house_id)) {
+				BlitSpriteType(draw_x, draw_y, SPRITE_FLAG_GREY, 64, 255, 255);
+			} else {
+				BlitSpriteType(draw_x, draw_y, SPRITE_FLAG_GREY, 64, 64, 255);
 			}
-
-			// house exit (blue splash)
-			if(tile->isHouseExit() && options.show_houses) {
-				if(tile->hasHouseExit(current_house_id)) {
-					BlitSpriteType(draw_x, draw_y, SPRITE_HOUSE_EXIT, 64, 255, 255);
-				} else {
-					BlitSpriteType(draw_x, draw_y, SPRITE_HOUSE_EXIT, 64, 64, 255);
-				}
+		}
+		//if(tile->isTownExit()) {
+		//	BlitSpriteType(draw_x, draw_y, SPRITE_FLAG_GREY, 255, 255, 64);
+		//}
+		if(tile->spawn && options.show_spawns) {
+			if(tile->spawn->isSelected()) {
+				BlitSpriteType(draw_x, draw_y, SPRITE_SPAWN, 128, 128, 128);
+			} else {
+				BlitSpriteType(draw_x, draw_y, SPRITE_SPAWN, 255, 255, 255);
 			}
-
-			// town temple (gray flag)
-			if(options.show_towns && tile->isTownExit(editor.map)) {
-				BlitSpriteType(draw_x, draw_y, SPRITE_TOWN_TEMPLE, 255, 255, 64, 170);
-			}
-
-			// spawn (purple flame)
-			if(tile->spawn && options.show_spawns) {
-				if(tile->spawn->isSelected()) {
-					BlitSpriteType(draw_x, draw_y, SPRITE_SPAWN, 128, 128, 128);
-				} else {
-					BlitSpriteType(draw_x, draw_y, SPRITE_SPAWN, 255, 255, 255);
-				}
-			}
-
-			// tooltips
-			if (options.show_tooltips) {
-				if (location->getWaypointCount() > 0)
-					MakeTooltip(draw_x, draw_y, tooltip.str(), 0, 255, 0);
-				else
-					MakeTooltip(draw_x, draw_y, tooltip.str());
-			}
-			tooltip.str("");
 		}
 	}
+
+	if(options.show_tooltips) {
+		if(location->getWaypointCount() > 0)
+			MakeTooltip(draw_x, draw_y, tooltip.str(), 0, 255, 0);
+		else
+			MakeTooltip(draw_x, draw_y, tooltip.str());
+	}
+	tooltip.str("");
 }
 
 void MapDrawer::DrawBrushIndicator(int x, int y, Brush* brush, uint8_t r, uint8_t g, uint8_t b)
@@ -1743,7 +1655,7 @@ void MapDrawer::DrawTooltips()
 		height = (height + 4.0f) * scale;
 
 		float x = tooltip->x + (TileSize / 2.0f);
-		float y = tooltip->y;
+		float y = tooltip->y + ((TileSize / 2.0f) * scale);
 		float center = width / 2.0f;
 		float space = (7.0f * scale);
 		float startx = x - center;

@@ -536,8 +536,7 @@ void MainToolBar::OnPositionKeyUp(wxKeyEvent& event)
 void MainToolBar::OnPastePositionText(wxClipboardTextEvent& event)
 {
 	Position position;
-	const Map& currentMap = g_gui.GetCurrentMap();
-	if (posFromClipboard(position, currentMap.getWidth(), currentMap.getHeight())) {
+	if (posFromClipboard(position.x, position.y, position.z)) {
 		x_control->SetIntValue(position.x);
 		y_control->SetIntValue(position.y);
 		z_control->SetIntValue(position.z);

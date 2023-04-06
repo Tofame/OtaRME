@@ -33,7 +33,6 @@
 #include "item.h"
 #include "complexitem.h"
 #include "town.h"
-#include "wall_brush.h"
 
 #include "iomap_otbm.h"
 
@@ -315,33 +314,6 @@ void Door::serializeItemAttributes_OTBM(const IOMap& maphandle, NodeFileWriteHan
 		stream.addByte(OTBM_ATTR_HOUSEDOORID);
 		stream.addU8(doorId);
 	}
-}
-
-DoorType Door::getDoorType() const
-{
-	WallBrush* wb = getWallBrush();
-	if (!wb) {
-		return WALL_UNDEFINED;
-	}
-
-	return wb->getDoorTypeFromID(id);
-}
-
-bool Door::isRealDoor() const
-{
-	const DoorType& dt = getDoorType();
-	// doors with no wallbrush will appear as WALL_UNDEFINED
-	// this is for compatibility
-	return dt == WALL_UNDEFINED || dt == WALL_DOOR_NORMAL || dt == WALL_DOOR_LOCKED || dt == WALL_DOOR_QUEST || dt == WALL_DOOR_MAGIC || dt == WALL_DOOR_NORMAL_ALT;
-}
-
-uint8_t Door::getDoorID() const
-{
-	return isRealDoor() ? doorId : 0;
-}
-
-void Door::setDoorID(uint8_t id) {
-	doorId = isRealDoor() ? id : 0;
 }
 
 // ============================================================================
@@ -1027,7 +999,6 @@ bool IOMapOTBM::loadMap(Map& map, NodeFileReadHandle& f)
 				pos.y = y;
 				pos.z = z;
 				town->setTemplePosition(pos);
-				map.getOrCreateTile(pos)->getLocation()->increaseTownCount();
 			}
 		} else if(node_type == OTBM_WAYPOINTS) {
 			for(BinaryNode* waypointNode = mapNode->getChild(); waypointNode != nullptr; waypointNode = waypointNode->advance()) {
@@ -1480,7 +1451,7 @@ bool IOMapOTBM::saveMap(Map& map, NodeFileWriteHandle& f)
 		{
 			f.addByte(OTBM_ATTR_DESCRIPTION);
 			// Neither SimOne's nor OpenTibia cares for additional description tags
-			f.addString("Saved with " + __RME_APPLICATION_NAME__ + " " + __RME_VERSION__);
+			f.addString("Saved with Remere's Map Editor " + __RME_VERSION__);
 
 			f.addU8(OTBM_ATTR_DESCRIPTION);
 			f.addString(map.description);
