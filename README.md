@@ -44,6 +44,6 @@ cd developer
 
 
 FURTHERMORE WHAT I NOTICED IS THAT YOU NEED:
-./vcpkg install boost-spirit:x64-windows
-./vcpkg install libarchive:x64-windows
+```./vcpkg install boost-spirit:x64-windows```
+```./vcpkg install libarchive:x64-windows```
 
